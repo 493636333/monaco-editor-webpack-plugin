@@ -117,7 +117,8 @@ function createLoaderRules(languages, features, workers, outputPath, publicPath)
       return {
         getWorkerUrl: function (moduleId, label) {
           var pathPrefix = (typeof window.__webpack_public_path__ === 'string' ? window.__webpack_public_path__ : ${JSON.stringify(publicPath)});
-          return (pathPrefix ? stripTrailingSlash(pathPrefix) + '/' : '') + paths[label];
+          var path = (pathPrefix ? stripTrailingSlash(pathPrefix) : location.origin) + '/' + paths[label].replace(/^\\//, '');
+          return "data:text/javascript;charset=utf-8," + encodeURIComponent("importScripts('" + path + "');");
         }
       };
     })(${JSON.stringify(workerPaths, null, 2)})`,
@@ -142,16 +143,16 @@ function createLoaderRules(languages, features, workers, outputPath, publicPath)
 function createPlugins(workers, outputPath) {
   return (
     []
-    .concat(uniqBy(workers, ({ id }) => id).map(({ id, entry, output }) =>
-      new AddWorkerEntryPointPlugin({
-        id,
-        entry: resolveMonacoPath(entry),
-        filename: path.join(outputPath, output),
-        plugins: [
-          new webpack.optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
-        ],
-      })
-    ))
+      .concat(uniqBy(workers, ({ id }) => id).map(({ id, entry, output }) =>
+        new AddWorkerEntryPointPlugin({
+          id,
+          entry: resolveMonacoPath(entry),
+          filename: path.join(outputPath, output),
+          plugins: [
+            new webpack.optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
+          ],
+        })
+      ))
   );
 }
 
